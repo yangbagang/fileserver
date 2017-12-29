@@ -154,28 +154,10 @@ public class FileUtils {
 
     public static void saveToWebp(File inputFile, File outputFile) {
         try {
-            // 输出准备
-            File outDir = outputFile.getParentFile();
-            if (!outDir.exists()) {
-                if (!outDir.mkdirs()) {
-                    throw new RuntimeException("文件夹创建失败！");
-                }
-            }
             // Obtain an image to encode from somewhere
             BufferedImage image = ImageIO.read(inputFile);
 
-            // Obtain a WebP ImageWriter instance
-            ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-
-            // Configure encoding parameters
-            WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
-            writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);
-
-            // Configure the output on the ImageWriter
-            writer.setOutput(new FileImageOutputStream(outputFile));
-
-            // Encode
-            writer.write(null, new IIOImage(image, null, null), writeParam);
+            createWebp(image, outputFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -183,15 +165,26 @@ public class FileUtils {
 
     public static void saveToWebp(InputStream inputFile, File outputFile) {
         try {
+            // Obtain an image to encode from somewhere
+            BufferedImage image = ImageIO.read(inputFile);
+
+            createWebp(image, outputFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createWebp(BufferedImage image, File webpFile) {
+        try {
             // 输出准备
-            File outDir = outputFile.getParentFile();
+            File outDir = webpFile.getParentFile();
             if (!outDir.exists()) {
                 if (!outDir.mkdirs()) {
                     throw new RuntimeException("文件夹创建失败！");
                 }
             }
             // Obtain an image to encode from somewhere
-            BufferedImage image = ImageIO.read(inputFile);
+            //BufferedImage image = ImageIO.read(inputFile);
 
             // Obtain a WebP ImageWriter instance
             ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
@@ -201,7 +194,7 @@ public class FileUtils {
             writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);
 
             // Configure the output on the ImageWriter
-            writer.setOutput(new FileImageOutputStream(outputFile));
+            writer.setOutput(new FileImageOutputStream(webpFile));
 
             // Encode
             writer.write(null, new IIOImage(image, null, null), writeParam);

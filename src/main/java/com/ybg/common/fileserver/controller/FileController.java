@@ -7,7 +7,6 @@ import com.ybg.common.fileserver.util.file.path.IllegalPathFormatException;
 import com.ybg.common.fileserver.util.file.path.PathFormat;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-//import org.apache.commons.net.util.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -35,15 +34,16 @@ public class FileController {
     String ROOT_PATH;
 
     /**
-     * 上传
+     * 上传图片并压缩为webp格式
      *
      * @param folder   文件夹
      * @param partFile 多段文件 上传的文件名称必须为：Filedata
      */
     @RequestMapping(value = "/upload3", method = {RequestMethod.OPTIONS, RequestMethod.POST})
-    public void upload3(String folder,
+    @ResponseBody
+    public Map<String, Object> upload3(String folder,
                                       @RequestParam("Filedata") MultipartFile partFile,HttpServletResponse response) {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<String, Object>();
         try {
             if (StringUtils.isEmpty(folder)) {
                 throw new RuntimeException("文件夹不能为空！");
@@ -66,81 +66,22 @@ public class FileController {
                 }
             }
             FileUtils.saveToWebp(partFile.getInputStream(), uploadFile);
-            map.put("status", HttpServletResponse.SC_OK);
-            map.put("fid", Coder.encode(fid));
-            System.err.println("=======fid======" + Coder.encode(fid));
-            String str = "{\"fid\":" +"\"" + Coder.encode(fid) +"\"" + ",\"status\":" + "\"" + HttpServletResponse.SC_OK +"\""+"}";
-            response.getWriter().write(str);
+            map.put("isSuccess", true);
+            map.put("message", "");
+            map.put("errorCode", ""+HttpServletResponse.SC_OK+"");
+            map.put("data", Coder.encode(fid));
         } catch (Exception e) {
             e.printStackTrace();
-            map.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            map.put("isSuccess", false);
+            map.put("errorCode", ""+HttpServletResponse.SC_INTERNAL_SERVER_ERROR+"");
+            map.put("data", ""+HttpServletResponse.SC_INTERNAL_SERVER_ERROR+"");
             map.put("message", e.getMessage());
         }
+        return map;
     }
 
     /**
-     * 上传
-     *
-     * @param folder   文件夹
-     * @param partFile 多段文件 上传的文件名称必须为：Filedata
-     */
-    @RequestMapping(value = "/upload2", method = {RequestMethod.OPTIONS, RequestMethod.POST})
-    public void upload2(String folder,
-                        @RequestParam("Filedata") MultipartFile partFile,HttpServletResponse response) {
-        Map<String, Object> map = new HashMap<>();
-        InputStream is = null;
-        BufferedOutputStream bos = null;
-        try {
-            if (StringUtils.isEmpty(folder)) {
-                throw new RuntimeException("文件夹不能为空！");
-            }
-            if (FileUtils.ofContainsSymbol(folder)) {
-                throw new RuntimeException("文件夹不能包含特许的字符！");
-            }
-            if (partFile == null || partFile.getSize() <= 0) {
-                throw new NullPointerException("文件内容不能为空！");
-            }
-            String fid = IDGenerator.randomFIDString(folder,
-                    partFile.getOriginalFilename());
-            if (fid.length() > 255) {
-                throw new RuntimeException("文件名不能太长！");
-            }
-            File uploadFile = new File(ROOT_PATH, fid);
-            File pf = uploadFile.getParentFile();
-            if (!pf.exists()) {
-                if (!pf.mkdirs()) {
-                    throw new RuntimeException("文件夹创建失败！");
-                }
-            }
-            //保存
-            is = partFile.getInputStream();
-            bos = new BufferedOutputStream(
-                    new FileOutputStream(uploadFile));
-            FileUtils.write(bos, is);
-            //压缩
-            String fid2 = IDGenerator.randomWebpFID(folder);
-            File webpFile = new File(ROOT_PATH, fid2);
-            new Thread(){
-                @Override
-                public void run() {
-                    super.run();
-                    FileUtils.saveToWebp(uploadFile, webpFile);
-                }
-            }.start();
-            map.put("status", HttpServletResponse.SC_OK);
-            map.put("fid", Coder.encode(fid2));
-            System.err.println("=======fid======" + Coder.encode(fid2));
-            String str = "{\"fid\":" +"\"" + Coder.encode(fid2) +"\"" + ",\"status\":" + "\"" + HttpServletResponse.SC_OK +"\""+"}";
-            response.getWriter().write(str);
-        } catch (Exception e) {
-            FileUtils.close(bos, is);
-            map.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            map.put("message", e.getMessage());
-        }
-    }
-
-    /**
-     * 上传
+     * 上传文件，无额外处理。
      *
      * @param folder   文件夹
      * @param partFile 多段文件 上传的文件名称必须为：Filedata
@@ -178,12 +119,16 @@ public class FileController {
             bos = new BufferedOutputStream(
                     new FileOutputStream(uploadFile));
             FileUtils.write(bos, is);
-            map.put("status", HttpServletResponse.SC_OK);
-            map.put("fid", Coder.encode(fid));
+            map.put("isSuccess", true);
+            map.put("message", "");
+            map.put("errorCode", ""+HttpServletResponse.SC_OK+"");
+            map.put("data", Coder.encode(fid));
         } catch (Exception e) {
         	e.printStackTrace();
             FileUtils.close(bos, is);
-            map.put("status", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            map.put("isSuccess", false);
+            map.put("errorCode", ""+HttpServletResponse.SC_INTERNAL_SERVER_ERROR+"");
+            map.put("data", ""+HttpServletResponse.SC_INTERNAL_SERVER_ERROR+"");
             map.put("message", e.getMessage());
         }
         return map;
